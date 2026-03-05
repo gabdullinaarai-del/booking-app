@@ -29,10 +29,10 @@ def is_valid_email(email):
     pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
     return bool(re.match(pattern, email))
 
-# --- БАЗА ДАННЫХ ФИЛЬМОВ (Наш каталог) ---
+# --- БАЗА ДАННЫХ ФИЛЬМОВ ---
 movies = {
     "Дюна: Часть вторая": {
-        "image": "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=400&auto=format&fit=crop", # Картинка-заглушка
+        "image": "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=400&auto=format&fit=crop", 
         "description": "Пол Атрейдес объединяется с Чани и фременами, чтобы отомстить заговорщикам, уничтожившим его семью.",
         "year": 2024, "country": "США, Канада", "director": "Дени Вильнёв",
         "actors": "Тимоти Шаламе, Зендея, Ребекка Фергюсон",
@@ -54,10 +54,18 @@ movies = {
     }
 }
 
+# --- НОВЫЙ СПИСОК КИНОТЕАТРОВ ---
 cinemas = [
-    "Кинопарк 11 (ул. Абая, 15)", 
-    "Евразия Синема (пр. Республики, 42)", 
-    "Силвер Скрин (ТРЦ Мега)"
+    "Kinopark 7 (Керуен) IMAX 3D (ул. Достык, 9)",
+    "Chaplin Khan Shatyr (пр. Туран 37)",
+    "Chaplin MEGA Silk Way (пр. Кабанбай батыра, 62)",
+    "Kinopark 8 3D (Сары-Арка) (пр. Туран, 24)",
+    "Kinopark 6 3D (Mega) (ТЦ Мега Центр Астана)",
+    "Arman Asia Park (пр. Кабанбай Батыра, 21)",
+    "Keruen Cinema (Talan Gallery) (ул. Достык, 16)",
+    "Евразия Cinema 7 (ул. Петрова, 24)",
+    "ARU Cinema (ТЦ Аружан)",
+    "Арсенал 3D (пр. Бауыржан Момышулы, 12)"
 ]
 
 times = ["10:00", "12:30", "15:15", "18:00", "20:45", "23:30"]
@@ -75,7 +83,7 @@ st.set_page_config(page_title="Кинотеатр онлайн", page_icon="🍿
 st.title("🍿 Бронирование билетов в кино")
 st.markdown("---")
 
-# 1. Выбор фильма и показ информации
+# 1. Выбор фильма
 selected_movie = st.selectbox("🎬 Выберите фильм:", list(movies.keys()))
 movie_data = movies[selected_movie]
 
@@ -119,71 +127,51 @@ total_tickets_to_select = adult_qty + child_qty + student_qty + senior_qty
 
 st.info(f"Вам нужно выбрать {total_tickets_to_select} мест(а).")
 
-# --- 4. Интерактивный план зала (Псевдографика) ---
+# --- 4. Интерактивный план зала ---
 st.subheader("🪑 Выбор мест на плане зала")
-st.markdown("Экран")
+st.markdown("**Экран**")
 st.markdown("---")
 
-# Инициализация выбранных мест в состоянии сессии, если их нет
 if 'selected_seats_plan' not in st.session_state:
     st.session_state.selected_seats_plan = []
 
-# Очистка выбранных мест, если изменился сеанс
 if st.session_state.get('last_session_key') != (selected_movie, selected_cinema, selected_date, selected_time):
     st.session_state.selected_seats_plan = []
     st.session_state.last_session_key = (selected_movie, selected_cinema, selected_date, selected_time)
 
-# Макет зала: 10 рядов, по 15 мест
 num_rows = 10
 seats_per_row = 15
 
-# Построение зала
 for row in range(1, num_rows + 1):
-    cols = st.columns(seats_per_row + 1) # Дополнительная колонка для номера ряда
+    cols = st.columns(seats_per_row + 1) 
     
-    # Номер ряда
     with cols[0]:
         st.markdown(f"**Ряд {row}:**")
 
-    # Места в ряду
     for seat_num in range(1, seats_per_row + 1):
-        seat_id = f"R{row}S{seat_num}" # Уникальный ID для каждого места
-        
-        # Определяем, выбрано ли это место
+        seat_id = f"R{row}S{seat_num}"
         is_selected = seat_id in st.session_state.selected_seats_plan
-        
-        # Определяем стиль кнопки
-        if is_selected:
-            button_style = "primary" # Синяя кнопка для выбранного места
-        else:
-            button_style = "secondary" # Серая кнопка для свободного места
+        button_style = "primary" if is_selected else "secondary"
 
         with cols[seat_num]:
-            # Создаем кнопку для каждого места
             if st.button(f"{seat_num}", key=seat_id, type=button_style):
                 if is_selected:
-                    # Если место уже выбрано, убираем его из списка
                     st.session_state.selected_seats_plan.remove(seat_id)
                 elif len(st.session_state.selected_seats_plan) < total_tickets_to_select:
-                    # Если место не выбрано и есть свободные места
                     st.session_state.selected_seats_plan.append(seat_id)
                 else:
-                    # Если выбрано максимальное количество мест
                     st.warning(f"Вы уже выбрали {total_tickets_to_select} мест(а). Отмените выбор, чтобы выбрать другое.")
-                # Принудительно перезагружаем страницу, чтобы обновились цвета кнопок
                 st.rerun() 
 
 st.markdown("---")
-# Выводим выбранные места
+
 if st.session_state.selected_seats_plan:
     st.success(f"Выбранные места: {', '.join(st.session_state.selected_seats_plan)}")
 else:
     st.write("Пожалуйста, выберите места на плане зала.")
 
-# --- Итоговая сумма и проверка ---
 current_selected_tickets = len(st.session_state.selected_seats_plan)
 
-# Расчет общей стоимости
 total_price = (adult_qty * ticket_prices['Взрослый'] + 
                child_qty * ticket_prices['Детский (до 12 лет)'] + 
                student_qty * ticket_prices['Студенческий'] + 
@@ -196,16 +184,15 @@ st.subheader("👤 Данные покупателя")
 name = st.text_input("Ваше имя:", key="buyer_name")
 email = st.text_input("Ваш Email:", key="buyer_email")
 
-# Проверяем, можно ли разрешить кнопку бронирования
+# ПРОВЕРКА ВСЕХ УСЛОВИЙ ДЛЯ КНОПКИ
 can_book = (total_tickets_to_select > 0 and 
             current_selected_tickets == total_tickets_to_select and 
             name and email and 
             is_valid_email(email))
 
 if st.button("Оплатить и забронировать", type="primary", disabled=not can_book):
-    # Если все проверки пройдены
     ticket_details = f"Взрослых: {adult_qty}, Детских: {child_qty}, Студ: {student_qty}, Пенс: {senior_qty}"
-    seats_str = ', '.join(st.session_state.selected_seats_plan) # Сохраняем как R1S5, R2S10
+    seats_str = ', '.join(st.session_state.selected_seats_plan) 
 
     c.execute('''INSERT INTO bookings 
                  (movie, cinema, show_date, show_time, seats, ticket_types, total_price, name, email) 
@@ -218,19 +205,21 @@ if st.button("Оплатить и забронировать", type="primary", d
     st.write(f"🪑 **Ваши места:** {seats_str}")
     st.balloons()
     
-    # Очищаем выбранные места после успешной брони
     st.session_state.selected_seats_plan = []
-    st.rerun() # Перезагружаем, чтобы кнопки стали серыми
+    st.rerun() 
 else:
-    if not can_book and st.session_state.get('button_clicked', False): # Проверяем, пытался ли пользователь нажать
-        if not name or not email:
-            st.error("⚠️ Пожалуйста, заполните поля с именем и email.")
-        elif not is_valid_email(email):
-            st.error("⚠️ Введен некорректный Email. Проверьте, есть ли в нем символ '@' и домен (например, .com или .ru).")
-        elif total_tickets_to_select == 0:
-            st.error("⚠️ Выберите хотя бы один билет.")
+    # Подсказки для пользователя, если он что-то не заполнил
+    if not can_book and (name or email or total_tickets_to_select > 0):
+        if total_tickets_to_select == 0:
+            st.error("⚠️ Выберите хотя бы один билет сверху.")
         elif current_selected_tickets != total_tickets_to_select:
-            st.error(f"⚠️ Выберите {total_tickets_to_select} мест(а). Выбрано: {current_selected_tickets}.")
+            st.error(f"⚠️ Выберите ровно {total_tickets_to_select} мест(а) на схеме зала.")
+        elif not name:
+            st.error("⚠️ Введите ваше Имя.")
+        elif not email:
+            st.error("⚠️ Введите ваш Email.")
+        elif not is_valid_email(email):
+            st.error("⚠️ Введен некорректный Email (не забудьте символ '@').")
 
 # --- АДМИН ПАНЕЛЬ ---
 st.markdown("---")
