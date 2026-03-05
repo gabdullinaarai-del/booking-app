@@ -44,6 +44,13 @@ movies = {
         "year": 2024, "country": "Россия", "director": "Михаил Локшин",
         "actors": "Аугуст Диль, Юлия Снигирь, Евгений Цыганов",
         "premiere": "25 января 2024", "genre": "Драма, фэнтези", "age": "18+"
+    },
+    "Оппенгеймер": {
+        "image": "https://images.unsplash.com/photo-1690029837549-c1842e472251?q=80&w=400&auto=format&fit=crop",
+        "description": "История жизни американского физика-теоретика Роберта Оппенгеймера, руководителя Манхэттенского проекта по созданию атомной бомбы.",
+        "year": 2023, "country": "США, Великобритания", "director": "Кристофер Нолан",
+        "actors": "Киллиан Мерфи, Эмили Блант, Мэтт Дэймон",
+        "premiere": "21 июля 2023", "genre": "Биографический, драма", "age": "18+"
     }
 }
 
@@ -72,14 +79,11 @@ st.markdown("---")
 selected_movie = st.selectbox("🎬 Выберите фильм:", list(movies.keys()))
 movie_data = movies[selected_movie]
 
-# Используем колонки для красивого отображения (слева постер, справа текст)
 col1, col2 = st.columns([1, 2])
-
 with col1:
     st.image(movie_data["image"], use_container_width=True)
-
 with col2:
-    st.subheader("Описание")
+    st.subheader(f"«{selected_movie}»")
     st.write(movie_data["description"])
     st.write(f"**Год выпуска:** {movie_data['year']}")
     st.write(f"**Страна:** {movie_data['country']}")
@@ -95,77 +99,143 @@ st.markdown("---")
 st.subheader("📅 Выбор сеанса")
 col3, col4, col5 = st.columns(3)
 with col3:
-    selected_cinema = st.selectbox("📍 Кинотеатр:", cinemas)
+    selected_cinema = st.selectbox("📍 Кинотеатр:", cinemas, key="cinema_select")
 with col4:
-    # Устанавливаем минимальную дату — сегодня
-    selected_date = st.date_input("🗓️ Дата сеанса:", min_value=datetime.date.today())
+    selected_date = st.date_input("🗓️ Дата сеанса:", min_value=datetime.date.today(), key="date_select")
 with col5:
-    selected_time = st.selectbox("⏰ Время сеанса:", times)
+    selected_time = st.selectbox("⏰ Время сеанса:", times, key="time_select")
 
 # 3. Выбор билетов
-st.subheader("🎫 Выбор билетов")
-st.write("Укажите количество билетов каждой категории:")
+st.subheader("🎫 Выбор количества билетов")
+st.write("Укажите, сколько билетов каждой категории вы хотите купить:")
 
 col_t1, col_t2, col_t3, col_t4 = st.columns(4)
-with col_t1: adult_qty = st.number_input(f"Взрослый ({ticket_prices['Взрослый']} тг)", 0, 10, 0)
-with col_t2: child_qty = st.number_input(f"Детский ({ticket_prices['Детский (до 12 лет)']} тг)", 0, 10, 0)
-with col_t3: student_qty = st.number_input(f"Студенческий ({ticket_prices['Студенческий']} тг)", 0, 10, 0)
-with col_t4: senior_qty = st.number_input(f"Пенсионный ({ticket_prices['Пенсионный']} тг)", 0, 10, 0)
+with col_t1: adult_qty = st.number_input(f"Взрослый ({ticket_prices['Взрослый']} тг)", 0, 10, 0, key="adult_qty")
+with col_t2: child_qty = st.number_input(f"Детский ({ticket_prices['Детский (до 12 лет)']} тг)", 0, 10, 0, key="child_qty")
+with col_t3: student_qty = st.number_input(f"Студенческий ({ticket_prices['Студенческий']} тг)", 0, 10, 0, key="student_qty")
+with col_t4: senior_qty = st.number_input(f"Пенсионный ({ticket_prices['Пенсионный']} тг)", 0, 10, 0, key="senior_qty")
 
-total_tickets = adult_qty + child_qty + student_qty + senior_qty
+total_tickets_to_select = adult_qty + child_qty + student_qty + senior_qty
+
+st.info(f"Вам нужно выбрать {total_tickets_to_select} мест(а).")
+
+# --- 4. Интерактивный план зала (Псевдографика) ---
+st.subheader("🪑 Выбор мест на плане зала")
+st.markdown("Экран")
+st.markdown("---")
+
+# Инициализация выбранных мест в состоянии сессии, если их нет
+if 'selected_seats_plan' not in st.session_state:
+    st.session_state.selected_seats_plan = []
+
+# Очистка выбранных мест, если изменился сеанс
+if st.session_state.get('last_session_key') != (selected_movie, selected_cinema, selected_date, selected_time):
+    st.session_state.selected_seats_plan = []
+    st.session_state.last_session_key = (selected_movie, selected_cinema, selected_date, selected_time)
+
+# Макет зала: 10 рядов, по 15 мест
+num_rows = 10
+seats_per_row = 15
+
+# Построение зала
+for row in range(1, num_rows + 1):
+    cols = st.columns(seats_per_row + 1) # Дополнительная колонка для номера ряда
+    
+    # Номер ряда
+    with cols[0]:
+        st.markdown(f"**Ряд {row}:**")
+
+    # Места в ряду
+    for seat_num in range(1, seats_per_row + 1):
+        seat_id = f"R{row}S{seat_num}" # Уникальный ID для каждого места
+        
+        # Определяем, выбрано ли это место
+        is_selected = seat_id in st.session_state.selected_seats_plan
+        
+        # Определяем стиль кнопки
+        if is_selected:
+            button_style = "primary" # Синяя кнопка для выбранного места
+        else:
+            button_style = "secondary" # Серая кнопка для свободного места
+
+        with cols[seat_num]:
+            # Создаем кнопку для каждого места
+            if st.button(f"{seat_num}", key=seat_id, type=button_style):
+                if is_selected:
+                    # Если место уже выбрано, убираем его из списка
+                    st.session_state.selected_seats_plan.remove(seat_id)
+                elif len(st.session_state.selected_seats_plan) < total_tickets_to_select:
+                    # Если место не выбрано и есть свободные места
+                    st.session_state.selected_seats_plan.append(seat_id)
+                else:
+                    # Если выбрано максимальное количество мест
+                    st.warning(f"Вы уже выбрали {total_tickets_to_select} мест(а). Отмените выбор, чтобы выбрать другое.")
+                # Принудительно перезагружаем страницу, чтобы обновились цвета кнопок
+                st.rerun() 
+
+st.markdown("---")
+# Выводим выбранные места
+if st.session_state.selected_seats_plan:
+    st.success(f"Выбранные места: {', '.join(st.session_state.selected_seats_plan)}")
+else:
+    st.write("Пожалуйста, выберите места на плане зала.")
+
+# --- Итоговая сумма и проверка ---
+current_selected_tickets = len(st.session_state.selected_seats_plan)
+
+# Расчет общей стоимости
 total_price = (adult_qty * ticket_prices['Взрослый'] + 
                child_qty * ticket_prices['Детский (до 12 лет)'] + 
                student_qty * ticket_prices['Студенческий'] + 
                senior_qty * ticket_prices['Пенсионный'])
 
-# 4. Выбор мест
-st.subheader("🪑 Выбор мест")
-selected_row = st.selectbox("Выберите ряд:", range(1, 11))
-# Multiselect позволяет выбрать сразу несколько мест
-selected_seats = st.multiselect("Выберите места (номера кресел):", range(1, 21))
-
-# Логическая проверка: количество мест должно совпадать с количеством билетов
-if len(selected_seats) != total_tickets:
-    if total_tickets > 0:
-        st.warning(f"⚠️ Вы выбрали {total_tickets} билет(ов), но отметили {len(selected_seats)} мест(а). Пожалуйста, выберите ровно {total_tickets} мест(а).")
-
-st.info(f"**Сумма к оплате:** {total_price} тг.")
+st.info(f"**Итого к оплате:** {total_price} тг. (Выбрано {current_selected_tickets} из {total_tickets_to_select} мест)")
 
 # 5. Оформление заказа
 st.subheader("👤 Данные покупателя")
-name = st.text_input("Ваше имя:")
-email = st.text_input("Ваш Email:")
+name = st.text_input("Ваше имя:", key="buyer_name")
+email = st.text_input("Ваш Email:", key="buyer_email")
 
 # Проверяем, можно ли разрешить кнопку бронирования
-can_book = total_tickets > 0 and len(selected_seats) == total_tickets
+can_book = (total_tickets_to_select > 0 and 
+            current_selected_tickets == total_tickets_to_select and 
+            name and email and 
+            is_valid_email(email))
 
 if st.button("Оплатить и забронировать", type="primary", disabled=not can_book):
-    if name and email:
-        if is_valid_email(email):
-            # Формируем строку с информацией о билетах для базы данных
-            ticket_details = f"Взрослых: {adult_qty}, Детских: {child_qty}, Студ: {student_qty}, Пенс: {senior_qty}"
-            seats_str = f"Ряд {selected_row}, Места: {', '.join(map(str, selected_seats))}"
-            
-            c.execute('''INSERT INTO bookings 
-                         (movie, cinema, show_date, show_time, seats, ticket_types, total_price, name, email) 
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', 
-                      (selected_movie, selected_cinema, str(selected_date), selected_time, seats_str, ticket_details, total_price, name, email))
-            conn.commit()
-            
-            st.success(f"🎬 Ура, {name}! Вы идете на фильм «{selected_movie}»!")
-            st.write(f"📍 **Место:** {selected_cinema} | 🗓 **Дата:** {selected_date} | ⏰ **Время:** {selected_time}")
-            st.write(f"🪑 **Ваши места:** {seats_str}")
-            st.balloons()
-        else:
-            st.error("⚠️ Введен некорректный Email.")
-    else:
-        st.error("⚠️ Пожалуйста, заполните поля с именем и email.")
+    # Если все проверки пройдены
+    ticket_details = f"Взрослых: {adult_qty}, Детских: {child_qty}, Студ: {student_qty}, Пенс: {senior_qty}"
+    seats_str = ', '.join(st.session_state.selected_seats_plan) # Сохраняем как R1S5, R2S10
 
-st.markdown("---")
+    c.execute('''INSERT INTO bookings 
+                 (movie, cinema, show_date, show_time, seats, ticket_types, total_price, name, email) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', 
+              (selected_movie, selected_cinema, str(selected_date), selected_time, seats_str, ticket_details, total_price, name, email))
+    conn.commit()
+    
+    st.success(f"🎬 Ура, {name}! Вы идете на фильм «{selected_movie}»!")
+    st.write(f"📍 **Место:** {selected_cinema} | 🗓 **Дата:** {selected_date} | ⏰ **Время:** {selected_time}")
+    st.write(f"🪑 **Ваши места:** {seats_str}")
+    st.balloons()
+    
+    # Очищаем выбранные места после успешной брони
+    st.session_state.selected_seats_plan = []
+    st.rerun() # Перезагружаем, чтобы кнопки стали серыми
+else:
+    if not can_book and st.session_state.get('button_clicked', False): # Проверяем, пытался ли пользователь нажать
+        if not name or not email:
+            st.error("⚠️ Пожалуйста, заполните поля с именем и email.")
+        elif not is_valid_email(email):
+            st.error("⚠️ Введен некорректный Email. Проверьте, есть ли в нем символ '@' и домен (например, .com или .ru).")
+        elif total_tickets_to_select == 0:
+            st.error("⚠️ Выберите хотя бы один билет.")
+        elif current_selected_tickets != total_tickets_to_select:
+            st.error(f"⚠️ Выберите {total_tickets_to_select} мест(а). Выбрано: {current_selected_tickets}.")
 
 # --- АДМИН ПАНЕЛЬ ---
+st.markdown("---")
 st.header("🔒 Панель администратора")
-admin_password = st.text_input("Пароль администратора:", type="password")
+admin_password = st.text_input("Пароль администратора:", type="password", key="admin_pass")
 
 if admin_password == "12345":
     st.subheader("📋 Все проданные билеты")
@@ -173,4 +243,7 @@ if admin_password == "12345":
     if not df.empty:
         st.dataframe(df, use_container_width=True, hide_index=True)
     else:
-        st.write("Пока нет ни одной бронирования.")
+        st.write("Пока нет ни одного бронирования.")
+else:
+    if admin_password != "":
+        st.error("Неверный пароль!")
