@@ -1,12 +1,20 @@
 import streamlit as st
 import pandas as pd
 import sqlite3
+import re  # 1. Новая библиотека для проверки правильности текста
 
-# 1. Подключение к базе данных (создаст файл tickets.db, если его нет)
+# Функция для проверки корректности email
+def is_valid_email(email):
+    # Специальный шаблон, который говорит: "текст + @ + текст + . + текст"
+    pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+    if re.match(pattern, email):
+        return True
+    return False
+
+# Подключение к базе данных
 conn = sqlite3.connect('tickets.db', check_same_thread=False)
 c = conn.cursor()
 
-# 2. Создание таблицы для хранения (запустится один раз)
 c.execute('''
     CREATE TABLE IF NOT EXISTS bookings (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,34 +59,34 @@ email = st.text_input("Ваш Email:")
 # Кнопка отправки
 if st.button("Забронировать", type="primary"):
     if name and email:
-        # 3. Сохранение данных прямо в базу данных SQLite
-        c.execute('INSERT INTO bookings (event, tickets_count, total_price, name, email) VALUES (?, ?, ?, ?, ?)', 
-                  (selected_event, tickets_count, total_price, name, email))
-        conn.commit()
-        
-        st.success(f"Ура, {name}! Вы успешно забронировали {tickets_count} билет(ов) на '{selected_event}'.")
-        st.balloons()
+        # 2. Проверяем email ПЕРЕД тем, как сохранить в базу
+        if is_valid_email(email):
+            c.execute('INSERT INTO bookings (event, tickets_count, total_price, name, email) VALUES (?, ?, ?, ?, ?)', 
+                      (selected_event, tickets_count, total_price, name, email))
+            conn.commit()
+            
+            st.success(f"Ура, {name}! Вы успешно забронировали {tickets_count} билет(ов) на '{selected_event}'.")
+            st.balloons()
+        else:
+            # 3. Выдаем ошибку, если email написан криво
+            st.error("⚠️ Ошибка: Введен некорректный Email. Проверьте, есть ли в нем символ '@' и домен (например, .com или .ru).")
     else:
         st.error("Пожалуйста, заполните поля с именем и email.")
 
 st.markdown("---")
 
-# 4. Секция только для Администратора
+# Секция только для Администратора
 st.header("🔒 Панель администратора")
 st.write("Введите пароль, чтобы увидеть все бронирования.")
 
-# Поле для пароля (символы скрыты звездочками)
 admin_password = st.text_input("Пароль:", type="password")
 
-# Простая проверка пароля (например, пароль будет 12345)
 if admin_password == "12345":
     st.subheader("📋 База данных бронирований")
     
-    # Достаем все данные из базы
     df = pd.read_sql_query("SELECT * FROM bookings", conn)
     
     if not df.empty:
-        # Показываем таблицу
         st.dataframe(df, use_container_width=True, hide_index=True)
     else:
         st.write("Пока нет ни одного бронирования.")
