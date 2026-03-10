@@ -382,7 +382,7 @@ with col5:
     selected_time = st.selectbox(" Время сеанса:", times, key="time_select")
 
 # 3. Выбор билетов
-st.subheader("🎫 Выбор количества билетов")
+st.subheader(" Выбор количества билетов")
 st.write("Укажите, сколько билетов каждой категории вы хотите купить:")
 
 col_t1, col_t2, col_t3, col_t4 = st.columns(4)
@@ -503,3 +503,4 @@ if admin_password == "12345":
 else:
     if admin_password != "":
         st.error("Неверный пароль!")
+
