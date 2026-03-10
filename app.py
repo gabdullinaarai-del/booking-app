@@ -345,13 +345,13 @@ ticket_prices = {
 }
 
 # --- ИНТЕРФЕЙС САЙТА ---
-st.set_page_config(page_title="Кинотеатр онлайн", page_icon="🍿", layout="wide")
+st.set_page_config(page_title="Кинотеатр онлайн", page_icon="", layout="wide")
 
-st.title("🍿 Бронирование билетов в кино")
+st.title(" Бронирование билетов в кино")
 st.markdown("---")
 
 # 1. Выбор фильма
-selected_movie = st.selectbox("🎬 Выберите фильм:", list(movies.keys()))
+selected_movie = st.selectbox(" Выберите фильм:", list(movies.keys()))
 movie_data = movies[selected_movie]
 
 col1, col2 = st.columns([1, 2])
@@ -366,20 +366,20 @@ with col2:
     st.write(f"**Актеры:** {movie_data['actors']}")
     st.write(f"**Премьера:** {movie_data['premiere']}")
     st.write(f"**Жанр:** {movie_data['genre']}")
-    st.write(f"**Продолжительность:** ⏱️ {movie_data['duration']}") 
-    st.write(f"**Возрастное ограничение:** 🔴 {movie_data['age']}")
+    st.write(f"**Продолжительность:** {movie_data['duration']}") 
+    st.write(f"**Возрастное ограничение:** {movie_data['age']}")
 
 st.markdown("---")
 
 # 2. Настройки сеанса
-st.subheader("📅 Выбор сеанса")
+st.subheader(" Выбор сеанса")
 col3, col4, col5 = st.columns(3)
 with col3:
-    selected_cinema = st.selectbox("📍 Кинотеатр:", cinemas, key="cinema_select")
+    selected_cinema = st.selectbox(" Кинотеатр:", cinemas, key="cinema_select")
 with col4:
-    selected_date = st.date_input("🗓️ Дата сеанса:", min_value=datetime.date.today(), key="date_select")
+    selected_date = st.date_input(" Дата сеанса:", min_value=datetime.date.today(), key="date_select")
 with col5:
-    selected_time = st.selectbox("⏰ Время сеанса:", times, key="time_select")
+    selected_time = st.selectbox(" Время сеанса:", times, key="time_select")
 
 # 3. Выбор билетов
 st.subheader("🎫 Выбор количества билетов")
@@ -396,7 +396,7 @@ total_tickets_to_select = adult_qty + child_qty + student_qty + senior_qty
 st.info(f"Вам нужно выбрать {total_tickets_to_select} мест(а).")
 
 # --- 4. Интерактивный план зала ---
-st.subheader("🪑 Выбор мест на плане зала")
+st.subheader(" Выбор мест на плане зала")
 st.markdown("**Экран**")
 st.markdown("---")
 
@@ -448,7 +448,7 @@ total_price = (adult_qty * ticket_prices['Взрослый'] +
 st.info(f"**Итого к оплате:** {total_price} тг. (Выбрано {current_selected_tickets} из {total_tickets_to_select} мест)")
 
 # 5. Оформление заказа
-st.subheader("👤 Данные покупателя")
+st.subheader(" Данные покупателя")
 name = st.text_input("Ваше имя:", key="buyer_name")
 email = st.text_input("Ваш Email:", key="buyer_email")
 
@@ -468,9 +468,9 @@ if st.button("Оплатить и забронировать", type="primary", d
               (selected_movie, selected_cinema, str(selected_date), selected_time, seats_str, ticket_details, total_price, name, email))
     conn.commit()
     
-    st.success(f"🎬 Ура, {name}! Вы идете на фильм «{selected_movie}»!")
-    st.write(f"📍 **Место:** {selected_cinema} | 🗓 **Дата:** {selected_date} | ⏰ **Время:** {selected_time}")
-    st.write(f"🪑 **Ваши места:** {seats_str}")
+    st.success(f" Ура, {name}! Вы идете на фильм «{selected_movie}»!")
+    st.write(f" **Место:** {selected_cinema} |  **Дата:** {selected_date} |  **Время:** {selected_time}")
+    st.write(f" **Ваши места:** {seats_str}")
     st.balloons()
     
     st.session_state.selected_seats_plan = []
@@ -478,23 +478,23 @@ if st.button("Оплатить и забронировать", type="primary", d
 else:
     if not can_book and (name or email or total_tickets_to_select > 0):
         if total_tickets_to_select == 0:
-            st.error("⚠️ Выберите хотя бы один билет сверху.")
+            st.error(" Выберите хотя бы один билет сверху.")
         elif current_selected_tickets != total_tickets_to_select:
-            st.error(f"⚠️ Выберите ровно {total_tickets_to_select} мест(а) на схеме зала.")
+            st.error(f" Выберите ровно {total_tickets_to_select} мест(а) на схеме зала.")
         elif not name:
-            st.error("⚠️ Введите ваше Имя.")
+            st.error(" Введите ваше Имя.")
         elif not email:
-            st.error("⚠️ Введите ваш Email.")
+            st.error(" Введите ваш Email.")
         elif not is_valid_email(email):
-            st.error("⚠️ Введен некорректный Email (не забудьте символ '@').")
+            st.error(" Введен некорректный Email (не забудьте символ '@').")
 
 # --- АДМИН ПАНЕЛЬ ---
 st.markdown("---")
-st.header("🔒 Панель администратора")
+st.header(" Панель администратора")
 admin_password = st.text_input("Пароль администратора:", type="password", key="admin_pass")
 
 if admin_password == "12345":
-    st.subheader("📋 Все проданные билеты")
+    st.subheader(" Все проданные билеты")
     df = pd.read_sql_query("SELECT * FROM bookings", conn)
     if not df.empty:
         st.dataframe(df, use_container_width=True, hide_index=True)
